@@ -10,7 +10,7 @@
   <title>Absensi Siswa</title>
   <link rel="stylesheet" href="src/output.css">
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen relative">
   <nav class="flex justify-between shadow-md border-b border-gray-100 px-64 py-4">
     <section class="flex items-center gap-2">
       <div class="rounded-xl w-10 h-10 bg-blue-500 text-white flex items-center justify-center">
@@ -154,23 +154,23 @@
           Mark Attendance
         </button>
       </div>
-      <table>
-        <thead>
+      <table class="w-full rounded-xl border border-gray-200 shadow-md overflow-hidden mt-8">
+        <thead class="border-b border-gray-200">
           <tr>
-            <td>Student Name</td>
-            <td>Class</td>
-            <td>Date</td>
-            <td>Status</td>
-            <td>Action</td>
+            <td class="p-3 font-semibold">Student Name</td>
+            <td class="p-3 font-semibold">Class</td>
+            <td class="p-3 font-semibold">Date</td>
+            <td class="p-3 font-semibold">Status</td>
+            <td class="p-3 font-semibold">Action</td>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>Emma Johnson</td>
-            <td>Grade 3-A</td>
-            <td>Feb 3, 2026</td>
-            <td>Present</td>
-            <td>
+          <tr class="hover:bg-gray-100 transition-all">
+            <td class="p-3">Emma Johnson</td>
+            <td class="p-3">Grade 3-A</td>
+            <td class="p-3">Feb 3, 2026</td>
+            <td class="p-3">Present</td>
+            <td class="p-3">
               <button class="rounded-xl p-1 text-blue-600 hover:bg-blue-100/50 transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" 
                   width="24" 
@@ -209,5 +209,85 @@
       </table>
     </section>
   </main>
+
+  <!-- modal -->
+  <div class="absolute w-96">
+    <section class="flex items-center justify-between p-4 border-b border-gray-100">
+      <p class="font-semibold text-xl">Mark Attendance</p>
+      <button>
+        <svg xmlns="http://www.w3.org/2000/svg" 
+          width="24" 
+          height="24" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          stroke-width="2" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+          >
+            <path d="M18 6l-12 12"/>
+          <path d="M6 6l12 12"/>
+        </svg>
+      </button>
+    </section>
+    <section>
+      <form action="">
+        <div>
+          <label>Student Name</label>
+          <select name="" id="">
+            <option value="" disabled selected hidden>Select a student</option>
+            <option value="">Ron</option>
+            <option value="">Ron</option>
+            <option value="">Ron</option>
+            <option value="">Ron</option>
+          </select>
+        </div>
+        <div>
+          <label>Class</label>
+          <select name="" id="">
+            <option value="" disabled selected hidden>Select a class</option>
+            <option value="">XII PPLG</option>
+            <option value="">XII PPLG</option>
+            <option value="">XII PPLG</option>
+            <option value="">XII PPLG</option>
+          </select>
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="date">
+        </div>
+        <div class="radio-group">
+          <label>Attendance Status</label>
+          <div>
+            <input type="radio">
+            <label>Hadir</label>
+          </div>
+          <div>
+            <input type="radio">
+            <label>Izin</label>
+          </div>
+          <div>
+            <input type="radio">
+            <label>Sakit</label>
+          </div>
+          <div>
+            <input type="radio">
+            <label>Alpha</label>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 text-center items-center justify-center">
+          <button class="bg-blue-600 text-white flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-center
+                        hover:bg-white hover:text-blue-600 border hover:border-blue-600 hover:scale-102 active:scale-100 transition-all">
+            Cancel
+          </button>
+          <button class="bg-blue-600 text-white flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-center
+                        hover:bg-white hover:text-blue-600 border hover:border-blue-600 hover:scale-102 active:scale-100 transition-all">
+            Save Attendance
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+
 </body>
 </html>
