@@ -1,5 +1,76 @@
 <?php
   include 'config/conn.php';
+
+  $absensi_q = mysqli_query($conn, "SELECT absensi.*, siswa.nis, siswa.nama_siswa, kelas.nama_kelas FROM absensi
+                                                  JOIN siswa ON absensi.id_siswa = siswa.id_siswa
+                                                  JOIN kelas ON siswa.id_kelas = kelas.id_kelas
+                                                  ORDER BY absensi.tanggal DESC");
+
+  $dropdown_q = mysqli_query($conn, "SELECT siswa.id_siswa, siswa.nama_siswa, kelas.nama_kelas FROM siswa
+                                                    JOIN kelas ON siswa.id_kelas = kelas.id_kelas
+                                                    ORDER BY kelas.nama_kelas, siswa.nama_siswa");
+
+  if (isset($_POST['action'])) {
+
+    $id_siswa  = $_POST['id_siswa']  ?? null;
+    $tanggal   = $_POST['tanggal']   ?? null;
+    $status    = $_POST['status']    ?? null;
+    $id_absen  = $_POST['id_absensi'] ?? null;
+
+    // ADD (pakai logic lama lu)
+    if ($_POST['action'] === 'add') {
+
+      $cek_q = mysqli_query(
+        $conn,
+        "SELECT id_absensi FROM absensi
+        WHERE id_siswa = '$id_siswa'
+        AND tanggal = '$tanggal'
+        LIMIT 1"
+      );
+
+      if (mysqli_num_rows($cek_q) > 0) {
+        $data = mysqli_fetch_assoc($cek_q);
+        $id_absensi = $data['id_absensi'];
+
+        mysqli_query(
+          $conn,
+          "UPDATE absensi
+          SET status = '$status'
+          WHERE id_absensi = '$id_absensi'"
+        );
+
+      } else {
+        mysqli_query(
+          $conn,
+          "INSERT INTO absensi (id_siswa, tanggal, status)
+          VALUES ('$id_siswa', '$tanggal', '$status')"
+        );
+      }
+    }
+
+    // EDIT (manual edit dari tabel)
+    if ($_POST['action'] === 'edit') {
+      mysqli_query(
+        $conn,
+        "UPDATE absensi
+        SET id_siswa='$id_siswa',
+            tanggal='$tanggal',
+            status='$status'
+        WHERE id_absensi='$id_absen'"
+      );
+    }
+
+    // DELETE
+    if ($_POST['action'] === 'delete') {
+      mysqli_query(
+        $conn,
+        "DELETE FROM absensi
+        WHERE id_absensi='$id_absen'"
+      );
+    }
+  }
+
+
 ?>
 
 <!DOCTYPE html>
@@ -49,7 +120,7 @@
     </section>
   </nav>
 
-  <main class="px-64 mt-8">
+  <main class="px-64 my-8">
     <section>
       <div class="tracking-wide flex flex-col gap-1">
         <h3 class="text-3xl font-semibold">Attendance Dashboard</h3>
@@ -136,8 +207,8 @@
     <section>
       <div class="flex justify-between items-center mt-8">
         <p class="font-semibold text-2xl">Attendance Records</p>
-        <button class="bg-blue-600 text-white flex items-center gap-2 px-6 py-3 rounded-xl font-semibold
-                        hover:bg-white hover:text-blue-600 border hover:border-blue-600 hover:scale-102 active:scale-100 transition-all">
+        <button id="openModalBtn" class="bg-blue-600 text-white flex items-center gap-2 px-6 py-3 rounded-xl font-semibold
+                        hover:bg-white hover:text-blue-600 border hover:border-blue-600 hover:scale-105 active:scale-95 transition-all">
           <svg xmlns="http://www.w3.org/2000/svg" 
             width="24"
             height="24"
@@ -154,9 +225,10 @@
           Mark Attendance
         </button>
       </div>
-      <table class="w-full rounded-xl border border-gray-200 shadow-md overflow-hidden mt-8">
-        <thead class="border-b border-gray-200">
+      <table class="w-full rounded-xl border border-gray-200 shadow-lg overflow-hidden mt-8">
+        <thead class="border-b border-gray-300">
           <tr>
+            <td class="p-3 font-semibold">No</td>
             <td class="p-3 font-semibold">Student Name</td>
             <td class="p-3 font-semibold">Class</td>
             <td class="p-3 font-semibold">Date</td>
@@ -165,13 +237,24 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="hover:bg-gray-100 transition-all">
-            <td class="p-3">Emma Johnson</td>
-            <td class="p-3">Grade 3-A</td>
-            <td class="p-3">Feb 3, 2026</td>
-            <td class="p-3">Present</td>
+          <?php
+            $no = 1;
+            while ($row = mysqli_fetch_assoc($absensi_q)) :
+          ?>
+          <tr class="border-b border-gray-200 hover:bg-gray-100 transition-all">
+            <td class="p-3"><?= $no++ ?></td>
+            <td class="p-3"><?= $row['nama_siswa'] ?></td>
+            <td class="p-3"><?= $row['nama_kelas'] ?></td>
+            <td class="p-3"><?= $row['tanggal'] ?></td>
+            <td class="p-3"><?= $row['status'] ?></td>
             <td class="p-3">
-              <button class="rounded-xl p-1 text-blue-600 hover:bg-blue-100/50 transition-all">
+              <button 
+                class="editBtn rounded-xl p-1 text-blue-600 hover:bg-blue-100/50 scale-95 hover:scale-100 active:scale-90 transition-all"
+                data-id="<?= $row['id_absensi'] ?>"
+                data-siswa="<?= $row['id_siswa'] ?>"
+                data-tanggal="<?= $row['tanggal'] ?>"
+                data-status="<?= $row['status'] ?>"
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" 
                   width="24" 
                   height="24" 
@@ -186,35 +269,46 @@
                   <path d="M13.5 6.5l4 4"/>
                 </svg>
               </button>
-              <button class="rounded-xl p-1 text-red-600 hover:bg-red-100/50 transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" 
-                  width="24"
-                  height="24" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  stroke-width="2" 
-                  stroke-linecap="round" 
-                  stroke-linejoin="round">
-                    <path d="M4 7l16 0"/>
-                  <path d="M10 11l0 6"/>
-                  <path d="M14 11l0 6"/>
-                  <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
-                  <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
-                </svg>
-              </button>
+              <form method="POST" class="inline">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="id_absensi" value="<?= $row['id_absensi'] ?>">
+                <button class="rounded-xl p-1 text-red-600 hover:bg-red-100/50 scale-95 hover:scale-100 active:scale-90 transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg" 
+                    width="24"
+                    height="24" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    stroke-width="2" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round">
+                      <path d="M4 7l16 0"/>
+                    <path d="M10 11l0 6"/>
+                    <path d="M14 11l0 6"/>
+                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
+                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
+                  </svg>
+                </button>
+              </form>
             </td>
           </tr>
+          <?php
+            endwhile;
+          ?>
         </tbody>
       </table>
     </section>
   </main>
 
+  <!-- backdrop -->
+  <div id="modalBackdrop" class="fixed inset-0 bg-black/50 hidden z-40 transition-opacity duration-300"></div>
+
   <!-- modal -->
-  <div class="absolute w-96">
-    <section class="flex items-center justify-between p-4 border-b border-gray-100">
+  <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] hidden bg-white rounded-xl z-50 
+              transform scale-95 opacity-0 transition-all duration-300 ease-out" id="modal">
+    <section class="flex items-center justify-between px-6 py-7 border-b border-gray-300">
       <p class="font-semibold text-xl">Mark Attendance</p>
-      <button>
+      <button class="closeModalBtn text-gray-500 hover:bg-gray-100 p-2 rounded-xl">
         <svg xmlns="http://www.w3.org/2000/svg" 
           width="24" 
           height="24" 
@@ -231,57 +325,54 @@
       </button>
     </section>
     <section>
-      <form action="">
-        <div>
-          <label>Student Name</label>
-          <select name="" id="">
+      <form method="POST" class="p-6 flex flex-col gap-3">
+        <input type="hidden" name="action" id="formAction" value="add">
+        <input type="hidden" name="id_absensi" id="idAbsensi">
+
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-gray-600">Student Name</label>
+          <select name="id_siswa" id="" class="px-4 py-3 border border-gray-300 rounded-xl" required>
             <option value="" disabled selected hidden>Select a student</option>
-            <option value="">Ron</option>
-            <option value="">Ron</option>
-            <option value="">Ron</option>
-            <option value="">Ron</option>
+            <?php
+              while ($row = mysqli_fetch_assoc($dropdown_q)) :
+            ?>
+            <option value="<?= $row['id_siswa'] ?>"><?= $row['nama_siswa'] ?> - <?= $row['nama_kelas'] ?></option>
+            <?php
+              endwhile;
+            ?>
           </select>
         </div>
-        <div>
-          <label>Class</label>
-          <select name="" id="">
-            <option value="" disabled selected hidden>Select a class</option>
-            <option value="">XII PPLG</option>
-            <option value="">XII PPLG</option>
-            <option value="">XII PPLG</option>
-            <option value="">XII PPLG</option>
-          </select>
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-gray-600">Date</label>
+          <input type="date" name="tanggal" class="px-4 py-3 border border-gray-300 rounded-xl" required>
         </div>
-        <div>
-          <label>Date</label>
-          <input type="date">
+        <div class="radio-group flex flex-col gap-2">
+          <label class="font-semibold text-gray-600">Attendance Status</label>
+          <label class="px-4 py-3 border border-gray-300 rounded-xl">
+            <input type="radio" name="status" value="hadir">
+            <span>Hadir</span>
+          </label>
+          <label class="px-4 py-3 border border-gray-300 rounded-xl">
+            <input type="radio" name="status" value="izin">
+            <span>Izin</span>
+          </label>
+          <label class="px-4 py-3 border border-gray-300 rounded-xl">
+            <input type="radio" name="status" value="sakit">
+            <span>Sakit</span>
+          </label>
+          <label class="px-4 py-3 border border-gray-300 rounded-xl">
+            <input type="radio" name="status" value="alpha">
+            <span>Alpha</span>
+          </label>
+          <input type="hidden" name="action" value="add">
         </div>
-        <div class="radio-group">
-          <label>Attendance Status</label>
-          <div>
-            <input type="radio">
-            <label>Hadir</label>
-          </div>
-          <div>
-            <input type="radio">
-            <label>Izin</label>
-          </div>
-          <div>
-            <input type="radio">
-            <label>Sakit</label>
-          </div>
-          <div>
-            <input type="radio">
-            <label>Alpha</label>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 text-center items-center justify-center">
-          <button class="bg-blue-600 text-white flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-center
-                        hover:bg-white hover:text-blue-600 border hover:border-blue-600 hover:scale-102 active:scale-100 transition-all">
+        <div class="grid grid-cols-2 gap-2 text-center items-center justify-center mt-4">
+          <button class="closeModalBtn bg-gray-200 text-black flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-center
+                        hover:bg-white hover:text-red-600 border border-gray-200 hover:border-red-600 hover:scale-105 active:scale-95 transition-all">
             Cancel
           </button>
-          <button class="bg-blue-600 text-white flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-center
-                        hover:bg-white hover:text-blue-600 border hover:border-blue-600 hover:scale-102 active:scale-100 transition-all">
+          <button type="submit" class="bg-blue-600 text-white flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-center
+                        hover:bg-white hover:text-blue-600 border hover:border-blue-600 hover:scale-105 active:scale-95 transition-all">
             Save Attendance
           </button>
         </div>
@@ -289,5 +380,6 @@
     </section>
   </div>
 
+  <script src="src/script.js"></script>
 </body>
 </html>
