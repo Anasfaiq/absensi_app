@@ -1,6 +1,39 @@
 <?php
   include 'config/conn.php';
 
+  // recap total siswa
+  $total_siswa_q = mysqli_query($conn, "SELECT COUNT(*) AS total FROM siswa");
+  $total_siswa = mysqli_fetch_assoc($total_siswa_q)['total'];
+
+  // recap hadir hari ini
+  $hadir_q = mysqli_query($conn, "SELECT COUNT(*) AS total FROM absensi WHERE status = 'hadir' AND tanggal = CURDATE()");
+  $hadir = mysqli_fetch_assoc($hadir_q)['total'];
+
+  // recap tidak hadir (izin + sakit + alpha) hari ini
+  $tidak_hadir_q = mysqli_query($conn, "SELECT COUNT(*) AS total FROM absensi WHERE status != 'hadir' AND tanggal = CURDATE()");
+  $tidak_hadir = mysqli_fetch_assoc($tidak_hadir_q)['total'];
+
+  // recap mingguan (7 hari terakhir)
+  $weekly_q = mysqli_query($conn, "SELECT status, COUNT(*) AS total FROM absensi WHERE tanggal >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY status");
+
+  // recap bulanan (bulan ini)
+  $monthly_q = mysqli_query($conn, "SELECT status, COUNT(*) AS total FROM absensi WHERE MONTH(tanggal) = MONTH(CURDATE()) 
+                                                  AND YEAR(tanggal) = YEAR(CURDATE()) GROUP BY status");
+
+  // helper biar ga undefined
+  function mapStatus($query) {
+    $data = ['hadir'=>0, 'izin'=>0, 'sakit'=>0, 'alpha'=>0];
+    while ($row = mysqli_fetch_assoc($query)) {
+      $data[$row['status']] = $row['total'];
+    }
+    return $data;
+  }
+
+$weekly  = mapStatus($weekly_q);
+$monthly = mapStatus($monthly_q);
+
+
+
   $absensi_q = mysqli_query($conn, "SELECT absensi.*, siswa.nis, siswa.nama_siswa, kelas.nama_kelas FROM absensi
                                                   JOIN siswa ON absensi.id_siswa = siswa.id_siswa
                                                   JOIN kelas ON siswa.id_kelas = kelas.id_kelas
@@ -131,7 +164,7 @@
                     hover:scale-102 hover:shadow-lg transition-all">
           <div>
             <p class="text-md">Total Students</p>
-            <h3 class="text-3xl font-semibold">10</h3>
+            <h3 class="text-3xl font-semibold"><?= $total_siswa ?></h3>
           </div>
           <div class="text-blue-500 bg-blue-100 p-3 rounded-xl">
             <svg 
@@ -156,8 +189,8 @@
         <div class="shadow-md border border-gray-100 rounded-xl flex items-center justify-between p-4
                     hover:scale-102 hover:shadow-lg transition-all">
           <div>
-            <p class="text-md">Total Students</p>
-            <h3 class="text-3xl font-semibold">10</h3>
+            <p class="text-md">Present Today</p>
+            <h3 class="text-3xl font-semibold"><?= $hadir ?></h3>
           </div>
           <div class="text-green-500 bg-green-100 p-3 rounded-xl">
             <svg xmlns="http://www.w3.org/2000/svg" 
@@ -180,8 +213,8 @@
         <div class="shadow-md border border-gray-100 rounded-xl flex items-center justify-between p-4
                     hover:scale-102 hover:shadow-lg transition-all">
           <div>
-            <p class="text-md">Total Students</p>
-            <h3 class="text-3xl font-semibold">10</h3>
+            <p class="text-md">Absent Today</p>
+            <h3 class="text-3xl font-semibold"><?= $tidak_hadir ?></h3>
           </div>
           <div class="text-red-500 bg-red-100 p-3 rounded-xl">
            <svg xmlns="http://www.w3.org/2000/svg" 
@@ -298,6 +331,63 @@
         </tbody>
       </table>
     </section>
+
+    <section class="mt-12">
+      <p class="font-semibold text-2xl mb-6">Attendance Recap</p>
+
+      <div class="grid grid-cols-2 gap-6">
+
+        <!-- WEEKLY -->
+        <div class="shadow-md border border-gray-100 rounded-xl p-6 hover:scale-102 hover:shadow-lg transition-all">
+          <p class="font-semibold text-xl mb-4">Weekly Recap (Last 7 Days)</p>
+
+          <div class="grid grid-cols-4 gap-4 text-center">
+            <div class="bg-green-100 text-green-600 rounded-xl p-4">
+              <p class="text-sm">Hadir</p>
+              <p class="text-2xl font-semibold"><?= $weekly['hadir'] ?></p>
+            </div>
+            <div class="bg-blue-100 text-blue-600 rounded-xl p-4">
+              <p class="text-sm">Izin</p>
+              <p class="text-2xl font-semibold"><?= $weekly['izin'] ?></p>
+            </div>
+            <div class="bg-yellow-100 text-yellow-600 rounded-xl p-4">
+              <p class="text-sm">Sakit</p>
+              <p class="text-2xl font-semibold"><?= $weekly['sakit'] ?></p>
+            </div>
+            <div class="bg-red-100 text-red-600 rounded-xl p-4">
+              <p class="text-sm">Alpha</p>
+              <p class="text-2xl font-semibold"><?= $weekly['alpha'] ?></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- MONTHLY -->
+        <div class="shadow-md border border-gray-100 rounded-xl p-6 hover:scale-102 hover:shadow-lg transition-all">
+          <p class="font-semibold text-xl mb-4">Monthly Recap (This Month)</p>
+
+          <div class="grid grid-cols-4 gap-4 text-center">
+            <div class="bg-green-100 text-green-600 rounded-xl p-4">
+              <p class="text-sm">Hadir</p>
+              <p class="text-2xl font-semibold"><?= $monthly['hadir'] ?></p>
+            </div>
+            <div class="bg-blue-100 text-blue-600 rounded-xl p-4">
+              <p class="text-sm">Izin</p>
+              <p class="text-2xl font-semibold"><?= $monthly['izin'] ?></p>
+            </div>
+            <div class="bg-yellow-100 text-yellow-600 rounded-xl p-4">
+              <p class="text-sm">Sakit</p>
+              <p class="text-2xl font-semibold"><?= $monthly['sakit'] ?></p>
+            </div>
+            <div class="bg-red-100 text-red-600 rounded-xl p-4">
+              <p class="text-sm">Alpha</p>
+              <p class="text-2xl font-semibold"><?= $monthly['alpha'] ?></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
   <!-- backdrop -->
